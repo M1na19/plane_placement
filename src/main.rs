@@ -1,8 +1,8 @@
 use std::mem::swap;
 
 //Folosind un algoritm genetic vedem cate grupe e cel mai optim si cate ar trebui sa contina
-//Imbarcarea lor cum e cel mai optim=> in ce ordin e
-//Un grup nu trb sa aiba toti membri apropritai
+//Imbarcarea lor cum e cel mai optim=> in ce ordine
+//Un grup nu trb sa aiba toti membri apropriati
 //In cazul unui rezultat random fac modificati
 use rand::Rng;
 
@@ -10,8 +10,8 @@ use rand::Rng;
 
 const PLANE_ROWS:usize=20;
 const UPPER_LIMIT_GROUPS:i32=10;
-const ROW_LENGHT:usize=6;//asta inseamna 60 de locuri
-const WAIT_TIME_MAX:i32=15;//seconds-vedem proportia
+const ROW_LENGHT:usize=6;//asta inseamna 120 de locuri
+const WAIT_TIME_MAX:i32=15;//seconds
 const WAIT_TIME_MIN:i32=5;
 const WAIT_ADD_ON_FAR_FROM_SEAT:i32=15;//sunt marimi aproximative le putem modifica           
 const MOVE_DELAY:i32=2;
