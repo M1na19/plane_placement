@@ -549,23 +549,25 @@ fn main() {
 }
 ```
 # Rezultatul experimentului
-> In continuare voi evalua configuratiile date de algoritm (variand si numarul de generatii) contra celei mai bune configuratii demonstrate de oameni si contra a configuratiei folosite de majoritatea firmelor de transport aerian
->>Cea mai buna configuratie:
+> In continuare voi evalua configuratiile date de algoritm (variand si numarul de generatii si randuri in avion) contra configuratiei folosite de majoritatea firmelor de transport aerian
+>>Inspiratia acestui experiment este acest video:\
+>>https://www.youtube.com/watch?v=oAHbLRjF0vo&ab_channel=CGPGrey\
+>>In acest video cea mai buna configuratie este propusa ca:
 >>```bash
->>6 4 5 | | 3 2 1
->>1 2 3 | | 4 5 6
->>6 4 5 | | 3 2 1
->>1 2 3 | | 4 5 6
->>6 4 5 | | 3 2 1
->>1 2 3 | | 4 5 6
->>6 4 5 | | 3 2 1
->>1 2 3 | | 4 5 6
->>6 4 5 | | 3 2 1
->>1 2 3 | | 4 5 6
+>>1 1 1 | | 2 2 2
+>>3 3 3 | | 4 4 4
+>>1 1 1 | | 2 2 2
+>>3 3 3 | | 4 4 4
+>>1 1 1 | | 2 2 2
+>>3 3 3 | | 4 4 4
+>>1 1 1 | | 2 2 2
+>>3 3 3 | | 4 4 4
+>>1 1 1 | | 2 2 2
+>>3 3 3 | | 4 4 4
 >>```
->>>Imbarcarea se face in ordine 1->6->2->5->3->4\
+>>>Imbarcarea se face in ordine 1->2->3->4\
 >>>\
->>>Motivul pentru care aceasta configuratie este foarte buna este faptul ca imbarca pasageri din exterior in interior dar totodata lasa o distanta de 2 randuri intre membri aceleiasi grupe pentru a interfera cat mai putin uni cu altii\
+>>>Voi compara de asemenea configuratia algoritmului cu configuratia din videoul acesta\
 >>>\
 >>>Merita mentionat ca desi majoritatea firmelor de avioane organizeaza din spate spre fata, metoda de a urca pasageri random este aprope lafel de optima ca orice alta configuratie si chiar mai buna per total decat metoda **back-to-front**
 ### Metoda Back-to-Front vs Algoritmul genetic
