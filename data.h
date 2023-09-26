@@ -1,8 +1,12 @@
 #include<random>
 #include<stdlib.h>
-#include<vector>
+#include<template.h>
+#include<iostream>
 const int MAX_GROUP_TO_SEATS_RATIO=20;
-//try implemanting template for list<> because u need it at Passanger List and Period List
+const int ROW_TIME=2;//sec
+const int MAX_WAIT_TIME=10;
+const int MIN_WAIT_TIME=2;
+
 int min(int a,int b){
     if(a<b){
         return a;
@@ -18,160 +22,158 @@ int max(int a,int b){
     }
 }
 
-//Mutations can be:
-//Steal from one group to other
-
 struct Passanger{
     int groupID;
     int row;
+    int waitTime;
     char seat;
-    Passanger* next;
 };
+bool sortByRowSeat(Passanger &x,Passanger &y){
+    if(x.row==y.row)return x.seat<y.seat;
+    return x.row<y.row;
+}
 struct Group{
-    Passanger* first=NULL,*last=NULL;
-    int nrPassangers;
-    void AddPassanger(Passanger* p){
-        if(first==NULL ){
-            first=p;
-        }else if(last==NULL){
-            last=p;
-            first->next=last;
-        }else{
-            last->next=p;
-            last=p;
-        }
-    }
-    //If u want to kill it use free after
-    Passanger* RemovePassangerAfter(Passanger* p){
-        if(p==last){
-            return NULL;
-        }else if(p->next==last){
-            Passanger* rem=last;
-            last=p;
-            p->next=NULL;
-            return rem;
-        }else{
-            Passanger* rem=p->next;
-            p->next=p->next->next;
-            return rem;
-        }
-    }
+    smartstore<Passanger> passangers;
 };
 struct Airplane{
-    Group* groups;
-    int nrGroups;
+    smartstore<Group> groups;
     int nrRows;
     int nrSeats;
-    void Copy(Airplane* a){
-        //copy the standard stuff
-        nrGroups=a->nrGroups;
-        nrRows=a->nrRows;
-        nrSeats=a->nrSeats;
-        groups=(Group*)calloc(nrGroups,sizeof(Group));
-        for(int i=0;i<nrGroups;i++){
-            Passanger*current=a->groups[i].first;
-            for(int j=0;j<a->groups[i].nrPassangers;j++){
-                Passanger passangerCopy;
-
-                //copy all the details
-                passangerCopy.groupID=i;
-                passangerCopy.row=current->row;
-                passangerCopy.seat=current->seat;
-
-                //give the copy away
-                groups[i].AddPassanger(&passangerCopy);
-                current=current->next;
-            }
-        }
+    void Copy(Airplane& a){
+        nrRows=a.nrRows;
+        nrSeats=a.nrSeats;
+        groups=a.groups.copy();
     }
-    //Dealocate Memory 
-    void Kill(){
-        free(groups);
-    }
+
+    //Mutations can be steals of passangers from one place to another or switches between the order groups enter
     //Mutation degree should be a number between 1 and 100
-    //Remember to free mutations
-    Airplane* Mutate(int maxMutations,int mutationDegree,int nrResults){
+    smartstore<Airplane>& Mutate(int maxMutations,int mutationDegree,int nrResults){
         srand(NULL);
 
-        Airplane* mutations=(Airplane*)calloc(nrResults,sizeof(Airplane));
+        smartstore<Airplane> mutations;
         for(int i=0;i<nrResults;i++){
             int nrMutations=rand()%maxMutations+maxMutations*mutationDegree/100;
+            Airplane a;
             for(int j=0;j<nrMutations;j++){
-                mutations[i].Copy(this);
+                a.Copy(*this);
 
                 //find random groups
-                int randGroup1=rand()%nrGroups+1;
-                while(mutations[i].groups[randGroup1].nrPassangers==0){
-                    randGroup1=rand()%nrGroups+1;
+                int randGroup1=rand()%groups.size()+1;
+                while(a.groups[randGroup1].passangers.size()==0){
+                    randGroup1=rand()%groups.size()+1;
                 }
-                int randGroup2=rand()%nrGroups+1;
+                int randGroup2=rand()%groups.size()+1;
                 while(randGroup2==randGroup1){
-                    randGroup2=rand()%nrGroups+1;
+                    randGroup2=rand()%groups.size()+1;
                 }
 
                 //find random passanger in first Group
-                int randPassanger=rand()%mutations[i].groups[randGroup1].nrPassangers+1;
+                int randPassanger=rand()%a.groups[randGroup1].passangers.size()+1;
 
                 //get the passanger and give it to group2 
-                Passanger* current=mutations[i].groups[randGroup1].first;
-                for(int k=1;k<randPassanger;k++){
-                    current=current->next;
-                }
-                Passanger* stolen=mutations[i].groups[randGroup1].RemovePassangerAfter(current);
-                mutations[i].groups[randGroup2].AddPassanger(stolen);
+                Passanger removed=a.groups[randGroup1].passangers.cutout(randPassanger);
+                a.groups[randGroup2].passangers.pushBack(removed);
             }
+            //switch random groups
+            //find random groups
+            int randGroup1=rand()%groups.size()+1;
+            int randGroup2=rand()%groups.size()+1;
+            a.groups.swap(randGroup1,randGroup2);
+
+            mutations.pushBack(a);
         }
         return mutations;
     }
     int Performance(){
         struct Interval{
             struct Period{
-                int start,end;
-                bool Intersects(Period* p){
-                    if(start<p->end && start>p->start){
-                        return true;
-                    }else if(end>p->start && end<p->end){
-                        return true;
-                    }else{
-                        return false;
+                int x,y;
+            };
+            smartstore<Period> periods;
+            int waitIntervalOpening(int x){
+                int opening=x;
+                for(int i=0;i<periods.size();i++){
+                    if(periods[i].x<=opening || periods[i].y>=opening){
+                        opening=periods[i].y+1;
                     }
                 }
-            }*periods;
-            
-            Period* Reunion(Period* i,Period* j){
-                if(i->Intersects(j)==false){
-                    return NULL;
-                }else{
-                    Period* z;
-                    z->start=min(i->start,j->start);
-                    z->end=max(i->end,j->end);
-                    return z;
+                return opening;
+            }
+            void addInterval(int x,int y){
+                Period p;
+                p.x=x;
+                p.y=y;
+
+                periods.pushBack(p);
+            }
+        };
+
+        int t=0;
+        smartstore<Interval> rows(nrRows);
+        for(int gi=0;gi<groups.size();gi++){
+            for(int pi=0;pi<groups[gi].passangers.size();pi++){
+                int timeP=ROW_TIME;
+                for(int i=1;i<groups[gi].passangers[pi].row;i++){
+                    int arrival=timeP;
+                    timeP=rows[i].waitIntervalOpening(timeP)+ROW_TIME;
+                    rows[i].addInterval(arrival,timeP);
+                }
+                t=max(t,timeP+groups[gi].passangers[pi].waitTime);
+                rows[groups[gi].passangers[pi].row].addInterval(timeP,timeP+groups[gi].passangers[pi].waitTime);
+            }
+        }
+        return t;
+    }
+    void Print(){
+        smartstore<Passanger> pass;
+        for(int g=0;g<groups.size();g++){
+            for(int p=0;p<groups[g].passangers.size();p++){
+                pass.pushBack(groups[g].passangers[p]);
+            }
+        } 
+        pass.sort(sortByRowSeat);
+        for(int k=0;k<nrRows;k++){
+            for(int i=0;i<nrSeats;i++){
+                cout<<pass[i].groupID<<" ";
+                if(i==nrSeats/2-1){
+                    cout<<"     ";
                 }
             }
-        }*Occupancy;
+            cout<<endl;
+        }
     }
 };
 
-Airplane* GenerateRandomAirplane(int nrRows,int nrSeats){
+Airplane& GenerateRandomAirplane(int nrRows,int nrSeats){
     Airplane a;
     srand(NULL);
-    a.nrGroups=rand()%(nrRows*nrSeats/MAX_GROUP_TO_SEATS_RATIO)+1;
-    a.groups=(Group*)calloc(a.nrGroups,sizeof(Group));
+    int nrGroups=rand()%(nrRows*nrSeats/MAX_GROUP_TO_SEATS_RATIO)+1;
 
     for(int i=0;i<nrRows;i++){
         for(int j=0;j<nrSeats;j++){
             //find random group
-            int randomGroup=rand()%a.nrGroups+1;
+            int randomGroup=rand()%nrGroups+1;
 
             //give it the details
-            Passanger* current=new Passanger();
-            current->row=i+1;
-            current->seat=char('A'+j);
-            current->groupID=randomGroup;
+            Passanger current;
+            current.row=i+1;
+            current.seat=char('A'+j);
+            current.groupID=randomGroup;
+            current.waitTime=rand()%(MAX_WAIT_TIME-MIN_WAIT_TIME+1)+MIN_WAIT_TIME;
             
             //give it away
-            a.groups[randomGroup].AddPassanger(current);
-            a.groups[randomGroup].nrPassangers++;
+            a.groups[randomGroup].passangers.pushBack(current);
         }
     }
+    return a;
+}
+Airplane& changePassangerInfo(Airplane& a){
+    Airplane newA;
+    newA.Copy(a);
+    for(int gi=0;gi<newA.groups.size();gi++){
+        for(int pi=0;pi<newA.groups[gi].passangers.size();pi++){
+            newA.groups[gi].passangers[pi].waitTime=rand()%(MAX_WAIT_TIME-MIN_WAIT_TIME+1)+MIN_WAIT_TIME;
+        }
+    }
+    return newA;
 }
